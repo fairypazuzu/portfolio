@@ -232,9 +232,7 @@ for listing_dict in listings:
         listings_dict[key].append(listing_dict[key])
         
 
-df = pd.DataFrame(listings_dict).drop_duplicates() 
-#df['price_per_meter'] = df['price']/df['meters']
-#df['commodities'] = df['electricity'] + df['gas'] + df['water'] + df['drainage']   
+df = pd.DataFrame(listings_dict).drop_duplicates()   
 
 print(df)  
 
