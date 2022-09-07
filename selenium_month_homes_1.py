@@ -1,3 +1,4 @@
+#импорт модулей
 from selenium import webdriver
 import re
 import pandas as pd
@@ -5,8 +6,10 @@ import pandas as pd
 
 driver = webdriver.Firefox()
 
+#информация о поселениях
 settlements = pd.read_excel('settlements.xlsx')
 
+#запрос
 query = {
     'deal_type': 'rent',
     'offer_type': 'suburban',
@@ -15,12 +18,14 @@ query = {
     'region': '4588'
 }
 
+#строим части ссылок на основании запроса
 deal_type = 'deal_type=' + query['deal_type']
 offer_type = 'offer_type=' + query['offer_type']
 object_type = 'object_type[0]=' + str(query['object_type'])
 region = 'region=' + query['region']  
 rent_type = 'type=' + str(query['type'])
 
+#словари для ссылок
 house_materials = {
     '1': 'Кирпичный',    
     '2': 'Монолитный',
@@ -83,13 +88,14 @@ districts_data = {
     'Тосно': 'Тосненский'
     }
 
-
+#перебираем все части ссылки
 for house_material in house_materials:
     for heating_type in heating_types:
         for year in list(range(2000, 2022)):
                         for wc_site_type in wc_site_types:
                             for repair_type in repair_types:
                                 try:
+                                    #строим ссылку
                                     print(len(listings))
                                     material = 'house_material[0]=' + house_material
                                     heating = 'heating_type[0]=' + heating_type
@@ -98,12 +104,14 @@ for house_material in house_materials:
                                     year_str = f'max_house_year={year}&min_house_year={year}'
                                     link = f'https://spb.cian.ru/cat.php?&{deal_type}&{material}&{heating}&{wc_site}&{rent_type}&{repair}&{object_type}&{offer_type}&{year_str}&{region}'
                                     driver.get(link)
+                                    #вычисляем количество объектов недвижимости, страниц
                                     flats = int(driver.find_element_by_tag_name('h5').text.replace('Найдено', '').replace('объявлений', '').replace('объявления', '').replace('объявление', '').replace(' ', ''))
                                     if (flats % 28) == 0:
                                         total_pages = (flats/28)
                                     else: total_pages = ((flats/28)+1)
                                     page = 1
                                     while page<total_pages:
+                                        #перебираем страницы
                                         p = 'page=' + str(page)
                                         url = f'https://spb.cian.ru/cat.php?&{deal_type}&{material}&{heating}&{wc_site}&{rent_type}&{repair}&{object_type}&{offer_type}&{year_str}&{p}&{region}'
                                         driver.get(url)
@@ -111,6 +119,7 @@ for house_material in house_materials:
                                         group = '\n.{1,}'
                                         for x in [0, 1, 2]:
                                             for y in [0, 1, 2, 3, 4]:
+                                                #с помощью регулярных выражений собираем данные
                                                 pattern1 = '\nДом, .{1,} м², .{1,}' + group*x + '\n.{1,} шоссе\n.{1,} км от КАД' + group*y + '\nЛенинградская область, .{1,}\n.{1,} ₽/мес.' + group*4
                                                 pattern2 = '\nКоттедж, .{1,} м², .{1,}' + group*x + '\n.{1,} шоссе\n.{1,} км от КАД' + group*y + '\nЛенинградская область, .{1,}\n.{1,} ₽/мес.' + group*4
                                                 res = re.findall(f'{pattern1}|{pattern2}', page_text)
@@ -193,6 +202,7 @@ for house_material in house_materials:
                                         page += 1
                                 except Exception as e: print(f'{e}')
 
+#собираем словарь для датафрейма
 listings_dict = {
     'type': [],
     'meters': [],
@@ -216,6 +226,7 @@ listings_dict = {
     'age': []
     } 
 
+#создаем датафрейм
 for listing_dict in listings:
     for key in listing_dict:
         listings_dict[key].append(listing_dict[key])
